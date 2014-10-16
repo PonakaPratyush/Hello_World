@@ -1,0 +1,50 @@
+var http = require('http');
+var place;
+
+callback = function(response) {
+  var str = '';
+  response.on("data", function (chunk) {
+    str += chunk;
+  });
+  
+  response.on('end', function () {
+    var info=JSON.parse(str);
+    console.log("\n"+"CURRENT CONDITIONS");
+    process.stdout.write("Temp: "+info["data"]["current_condition"][0]["temp_C"] + "	");
+    process.stdout.write("Humidity: "+info["data"]["current_condition"][0]["humidity"] +  "	");
+    console.log(info["data"]["current_condition"][0]["weatherDesc"][0]["value"]+"\n");
+    
+    console.log("PREDICTIONS");
+    for(var i=0;i<info["data"]["weather"].length;i++){
+     	process.stdout.write(info["data"]["weather"][i]["date"] +  "	");
+     	console.log("Max Temp: "+info["data"]["weather"][i]["tempMaxC"]+ "	"+"Min Temp: "+info["data"]["weather"][i]["tempMinC"]+ "	"+info["data"]["weather"][i]["weatherDesc"][0]["value"]);
+    }
+    console.log("\n");
+    report();
+  });
+}
+
+function ask(question, back){
+	process.stdin.resume();
+	process.stdout.write(question+": ");
+	
+	process.stdin.once("data",function(data){
+		data=data.toString().trim();
+		back(data);
+	});
+}
+
+function report(){
+  ask("Location",function(place){
+  	http.request(
+  		{
+			host: 'api.worldweatheronline.com',
+			path: '/free/v1/weather.ashx?q='+place+'&format=json&num_of_days=3&show_comments=no&key=74950a084541e1e66062620c7abac3e284751aa5'
+		},
+		callback
+  	).end();
+  });
+  
+}
+
+report();
